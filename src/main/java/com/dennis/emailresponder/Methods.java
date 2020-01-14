@@ -13,38 +13,24 @@ import com.sun.mail.imap.protocol.FLAGS;
 class Methods{  
 
 
-
-	static void send(final String email,final String password,
-			String to,String sub,String msg,Session session ){  
-
-		Authenticator auth = new javax.mail.Authenticator() {    
-			protected PasswordAuthentication getPasswordAuthentication() {    
-				return new PasswordAuthentication(email,password);  
-			}    
-		}; 
-
-		Properties props = setAndGetProperties(); 
-		session = Session.getInstance(props, auth);
-
-
-
-		//compose message    
-		try {    
-			MimeMessage message = new MimeMessage(session);    
-			message.addRecipient(Message.RecipientType.TO,new InternetAddress(to));    
-			message.setSubject(sub);    
-			message.setText(msg, "utf-8", "html");    
-			//send message  
-			Transport.send(message);    
-			System.out.println("Message sent successfully to: " + to);    
-		} catch (MessagingException e) {throw new RuntimeException(e);}    
-
+	static void processUnreadEmails(String email, String password, String host){
+		
+		int minutes = 10;
+		try {
+			while(true) {
+			scanUnreadEmails(email, password, host);
+			Thread.sleep(1000*60*minutes);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
+	
 
-
-
-	static void listUnreadEmails(final String email,final String password, final String host) {    	    	
+	static void scanUnreadEmails(String email, String password, String host) {
+		System.out.println("\n\nNow scanning emails...\n");
 		//Properties props = System.getProperties();
 		Properties props = setAndGetProperties(); 
 
@@ -78,25 +64,27 @@ class Methods{
 						|| 	subject.contains("mulesoft") || subject.contains("mule soft")
 						|| 	subject.contains("automation") || subject.contains("big data")
 						|| 	subject.contains("business analyst") || subject.contains("etl developer")
-
+						|| 	subject.contains("new voicemail") || subject.contains("qa tech ")
+						|| 	subject.contains("hadoop") || subject.contains("node.js")
+						|| 	subject.contains("ui engineer") || subject.contains("android")
 						) {
-					System.out.println(" deleting this email subject=" + subject);
+					System.out.println("Deleting this email subject = " + msg.getSubject());
 					msg.setFlag(FLAGS.Flag.DELETED, true);
 					continue;
 				}
 
 				if(subject.startsWith("re:")) {
-					System.out.println("1 skipping this email subject=" + subject);
+					System.out.println("Skipping 1 this email subject=" + msg.getSubject());
 					continue;
 				}
 
 				if(!subject.contains("java")) {
-					System.out.println("2 skipping this email subject=" + subject);
+					System.out.println("Skipping 2 this email subject=" + msg.getSubject());
 					continue;
 				}
 
 				if((subject.contains("full time") || subject.contains("fulltime") )&& !subject.contains("contract")) {
-					System.out.println("3 skipping this email subject=" + subject);
+					System.out.println("Skipping 3 this email subject=" + msg.getSubject());
 					continue;
 				}
 
@@ -130,24 +118,38 @@ class Methods{
 					}
 				}
 
-				System.out.println("will respond to Subject = " + msg.getSubject());
-				//System.out.println("Content = " + content);
+				String contentLowerCase=content.toLowerCase();
 
-				boolean isHighCost=false;
+				if(contentLowerCase.contains("contract") || contentLowerCase.contains("duration")
+
+						) {
+
+					if(contentLowerCase.contains("java")) {
+
+						System.out.println("will respond to Subject = " + msg.getSubject());
+						//System.out.println("Content = " + content);
+
+						String responseMessage="Is C2C option available for this position?<br />"
+								+ "Is the hourly rate more that 115$/hr, C2C? (for California, NY etc. $125/hr)<br />"
+								+"Dennis";
+
+						responseMessage = modifyContent(content, responseMessage, from, date);
+
+						boolean isSuccess= send(email, password,from,"Re: "+msg.getSubject(), responseMessage,session);
+
+						if(isSuccess) {
+							System.out.println("Deleting this email after responding. subject =" + subject);
+							msg.setFlag(FLAGS.Flag.DELETED, true);
+						}
+
+					}
+
+					//inbox.close(false);
+				}else{
+					continue;
+				}
 
 
-
-
-				String responseMessage="Is C2C option available for this position?<br />"
-						+ "Is the hourly rate more that 115$/hr, C2C?<br />"
-						+"Dennis";
-
-				responseMessage = modifyContent(content, responseMessage, from, date);
-
-				send(email, password,from,"Re: "+msg.getSubject(), responseMessage,session);
-
-
-				//inbox.close(false);
 
 			}
 		}catch(Exception e)    {
@@ -174,7 +176,7 @@ class Methods{
 	 */
 	static String  dumpPart(Part p) throws Exception {
 		String contentType = p.getContentType();
-		System.out.println("dumpPart" + contentType);
+		//System.out.println("dumpPart" + contentType);
 		InputStream is = p.getInputStream();
 		if (!(is instanceof BufferedInputStream)) {
 			is = new BufferedInputStream(is);
@@ -191,8 +193,40 @@ class Methods{
 	static String  modifyContent(String content,String responseMessage, String from, Date date) throws Exception {
 
 
-		return responseMessage + "<br /><br />" + date.toString() + " <"+ from +  "> <br />" +  content;
+		return responseMessage + "<br /><br />" + date.toString() + " &lt;"+ from +  "&gt; wrote: <br />" +  content;
 	}
+
+
+
+	static boolean send(final String email,final String password,
+			String to,String sub,String msg,Session session ){  
+		boolean isSuccess=false;
+		Authenticator auth = new javax.mail.Authenticator() {    
+			protected PasswordAuthentication getPasswordAuthentication() {    
+				return new PasswordAuthentication(email,password);  
+			}    
+		}; 
+
+		Properties props = setAndGetProperties(); 
+		session = Session.getInstance(props, auth);
+
+
+
+		//compose message    
+		try {    
+			MimeMessage message = new MimeMessage(session);    
+			message.addRecipient(Message.RecipientType.TO,new InternetAddress(to));    
+			message.setSubject(sub);    
+			message.setText(msg, "utf-8", "html");    
+			//send message  
+			Transport.send(message);    
+			System.out.println("Message sent successfully to: " + to);  
+			isSuccess=true;
+		} catch (MessagingException e) {throw new RuntimeException(e);}    
+
+		return isSuccess;
+	}
+
 
 
 }  

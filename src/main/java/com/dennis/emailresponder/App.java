@@ -15,10 +15,7 @@ public class App
 	
     public static void main( String[] args )
     {
-    	  //from,password,to,subject,message  
-    	Methods.listUnreadEmails(email, password, host);
+    	Methods.processUnreadEmails(email, password, host);
     	
-       // Mailer.send("from@gmail.com","xxxxx","to@gmail.com","hello javatpoint","How r u?");  
-        //change from, password and to  
     }
 }
