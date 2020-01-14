@@ -1,2 +1,2 @@
 # EmailResponder
-A automatic responder to email.
+A automatic responder to dealing with recuiter spam.
