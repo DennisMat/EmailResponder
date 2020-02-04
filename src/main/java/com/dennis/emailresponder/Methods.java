@@ -1,11 +1,13 @@
 package com.dennis.emailresponder;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.Properties;    
-import javax.mail.*;    
+import javax.mail.*;
+import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
 import javax.mail.search.FlagTerm;
 
@@ -17,11 +19,11 @@ class Methods{
 		
 		int minutes = 10;
 		try {
-			while(true) {
+			//while(true) {
 			scanUnreadEmails(email, password, host);
-			Thread.sleep(1000*60*minutes);
-			}
-		} catch (InterruptedException e) {
+			//Thread.sleep(1000*60*minutes);
+			//}
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -42,6 +44,15 @@ class Methods{
 			store.connect(host, email, password);
 
 			Folder inbox = store.getFolder("INBOX");
+			Folder trash = store.getFolder("[Gmail]/Trash");
+			
+			
+			
+
+
+
+
+
 			inbox.open(Folder.READ_WRITE);
 
 
@@ -49,79 +60,100 @@ class Methods{
 			FlagTerm unseenFlagTerm = new FlagTerm(seen, false);
 			Message messages[] = inbox.search(unseenFlagTerm);
 
-
+			int count=0;
 
 			for (Message msg : messages) {
-
+				System.out.println("\n\n------------Message # " + ++count + "----------------");
 				String subject =msg.getSubject().toLowerCase();
-				String contentType = msg.getContentType().toLowerCase();
-				String content=null;
+				
+			
 				String from = ((InternetAddress)msg.getFrom()[0]).getAddress();
+				String toList = parseAddresses(msg
+                        .getRecipients(RecipientType.TO));
+                String ccList = parseAddresses(msg
+                        .getRecipients(RecipientType.CC));
+                
 				Date date=msg.getReceivedDate();
 
+				if(from.endsWith("@stellarit.com") || toList.contains("@stellarit.com")
+						|| ccList.contains("@stellarit.com")){					
+					System.out.println("Skipping 0 this email subject=" + msg.getSubject());
+					continue;
+				}
+				
+				if(subject.startsWith("re:")) {
+					System.out.println("Skipping 1 this email subject=" + msg.getSubject());
+					continue;
+				}
 
 				if(subject.contains("angular") || subject.contains(".net")
 						|| 	subject.contains("mulesoft") || subject.contains("mule soft")
 						|| 	subject.contains("automation") || subject.contains("big data")
 						|| 	subject.contains("business analyst") || subject.contains("etl developer")
-						|| 	subject.contains("new voicemail") || subject.contains("qa tech ")
+						|| 	subject.contains("new voicemail") || subject.contains("qa tech")
+						|| 	subject.contains("qa lead") || subject.contains("aws developer")
 						|| 	subject.contains("hadoop") || subject.contains("node.js")
 						|| 	subject.contains("ui engineer") || subject.contains("android")
+						|| 	subject.contains("data analyst") || subject.contains("etl")
+						|| 	subject.contains("data engineer") || subject.contains("embedded")
+						|| 	subject.contains("systems analyst") || subject.contains("system analyst")
+						|| 	subject.contains("quality analyst") || subject.contains("dotnet")
+						|| 	subject.contains("osb developer") || subject.contains("test analyst")
+						|| 	subject.contains("ux designer") || subject.contains("ui architect")
+						|| 	subject.contains("tester") || subject.contains("splunk")
+						|| 	subject.contains("new text message") || subject.contains("ui lead")
+						|| 	subject.contains("informatica") || subject.contains("front end")
+						|| 	subject.contains("ebs order management") || subject.contains("front end")
+						|| 	subject.contains("weblogic") || subject.contains("machine learning")
+						|| 	subject.contains("oracle financials") || subject.contains("peoplesoft")
 						) {
-					System.out.println("Deleting this email subject = " + msg.getSubject());
-					msg.setFlag(FLAGS.Flag.DELETED, true);
+					System.out.println("Deleting 2 this email from: " 
+						+ from + " ccList: " + ccList + "subject: " + msg.getSubject());
+					
+					softDelete(inbox, trash, msg);
+	
 					continue;
 				}
+				
 
-				if(subject.startsWith("re:")) {
-					System.out.println("Skipping 1 this email subject=" + msg.getSubject());
-					continue;
-				}
+
 
 				if(!subject.contains("java")) {
 					System.out.println("Skipping 2 this email subject=" + msg.getSubject());
 					continue;
 				}
 
-				if((subject.contains("full time") || subject.contains("fulltime") )&& !subject.contains("contract")) {
-					System.out.println("Skipping 3 this email subject=" + msg.getSubject());
+				if((subject.contains("full time") || subject.contains("permanent")
+					||	subject.contains("fulltime") || subject.contains("fte") )
+						
+						&& !(subject.contains("contract") || subject.contains("c2c"))) {
+					System.out.println("Deleting 3 this email from: " 
+							+ from + " ccList: " + ccList + "subject: " + msg.getSubject());
+					softDelete(inbox, trash, msg);
+					continue;
+				}
+				
+				if(subject.contains("w2 only")) {
+					System.out.println("Skipping 4 this email subject=" + msg.getSubject());
+					softDelete(inbox, trash, msg);
 					continue;
 				}
 
+			
 
-
-
-				if (contentType.contains("multipart")) {
-					// content may contain attachments
-					// javax.mail.internet.MimeMultipart multiPart =    (javax.mail.internet.MimeMultipart) message.getContent();
-					Multipart multiPart = (Multipart) msg.getContent();
-
-					int numberOfParts = multiPart.getCount();
-					for (int partCount = 0; partCount < numberOfParts; partCount++) {
-						MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(partCount);
-						if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-
-						} else {
-							// this part may be the message content
-							// content = part.getContent().toString();
-							content = dumpPart(part);
-							int a=3;
-						}
-					}
-
-
-				} else if (contentType.contains("text/plain")
-						|| contentType.contains("text/html")) {
-					Object ob = msg.getContent();
-					if (ob != null) {
-						content = ob.toString(); 
-					}
-				}
+				String content = getContent(msg);
 
 				String contentLowerCase=content.toLowerCase();
+				
+				
+				if(contentLowerCase.contains("fte only") || contentLowerCase.contains("no c2c")) {
+					System.out.println("Skipping 5 this email subject=" + msg.getSubject());
+					continue;
+				}
+				
 
 				if(contentLowerCase.contains("contract") || contentLowerCase.contains("duration")
-
+					|| contentLowerCase.contains("long term") || contentLowerCase.contains("months")
 						) {
 
 					if(contentLowerCase.contains("java")) {
@@ -130,7 +162,9 @@ class Methods{
 						//System.out.println("Content = " + content);
 
 						String responseMessage="Is C2C option available for this position?<br />"
-								+ "Is the hourly rate more that 115$/hr, C2C? (for California, NY etc. $125/hr)<br />"
+								+ "Is the hourly rate more that $90/hr, C2C? (for California, NY etc. $110/hr)<br />"
+								//+ "What are the best hourly rates, C2C?<br />"
+								+ "My experience= 15+ years<br />"
 								+"Dennis";
 
 						responseMessage = modifyContent(content, responseMessage, from, date);
@@ -138,14 +172,19 @@ class Methods{
 						boolean isSuccess= send(email, password,from,"Re: "+msg.getSubject(), responseMessage,session);
 
 						if(isSuccess) {
-							System.out.println("Deleting this email after responding. subject =" + subject);
-							msg.setFlag(FLAGS.Flag.DELETED, true);
+							System.out.println("Deleting this email after responding. subject = " + msg.getSubject());					
+							softDelete(inbox, trash, msg);
 						}
+							
+							
+							
+							
 
 					}
 
 					//inbox.close(false);
 				}else{
+					System.out.println("Skipping 5 this email subject=" + msg.getSubject());
 					continue;
 				}
 
@@ -156,6 +195,53 @@ class Methods{
 			System.out.println(e);
 		}
 
+		System.out.println("\nAll emails processed\n");
+	}
+
+
+
+	static void softDelete(Folder inbox, Folder trash, Message msg) throws MessagingException {
+		Message[] msgArr = new Message[1];
+		msgArr[0]=msg;
+		inbox.copyMessages(msgArr, trash);
+		//This  line is not needed the above line will handle it
+		//msg.setFlag(FLAGS.Flag.DELETED, true); 
+	}
+
+
+
+	static String getContent(Message msg)
+			throws IOException, MessagingException, Exception {
+		
+		String content=null;
+		String contentType = msg.getContentType().toLowerCase();
+		if (contentType.contains("multipart")) {
+			// content may contain attachments
+			// javax.mail.internet.MimeMultipart multiPart =    (javax.mail.internet.MimeMultipart) message.getContent();
+			Multipart multiPart = (Multipart) msg.getContent();
+
+			int numberOfParts = multiPart.getCount();
+			for (int partCount = 0; partCount < numberOfParts; partCount++) {
+				MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(partCount);
+				if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
+
+				} else {
+					// this part may be the message content
+					// content = part.getContent().toString();
+					content = dumpPart(part);
+					int a=3;
+				}
+			}
+
+
+		} else if (contentType.contains("text/plain")
+				|| contentType.contains("text/html")) {
+			Object ob = msg.getContent();
+			if (ob != null) {
+				content = ob.toString(); 
+			}
+		}
+		return content;
 	}
 
 	static Properties setAndGetProperties() {
@@ -226,6 +312,27 @@ class Methods{
 
 		return isSuccess;
 	}
+	
+    /**
+     * Returns a list of addresses in String format separated by comma
+     *
+     * @param address an array of Address objects
+     * @return a string represents a list of addresses
+     */
+    static String parseAddresses(Address[] address) {
+        String listAddress = "";
+ 
+        if (address != null) {
+            for (int i = 0; i < address.length; i++) {
+                listAddress += address[i].toString() + ", ";
+            }
+        }
+        if (listAddress.length() > 1) {
+            listAddress = listAddress.substring(0, listAddress.length() - 2);
+        }
+ 
+        return listAddress;
+    }
 
 
 
