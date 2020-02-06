@@ -85,36 +85,35 @@ class Methods{
 					System.out.println("Skipping 1 this email subject=" + msg.getSubject());
 					continue;
 				}
-
-				if(subject.contains("angular") || subject.contains(".net")
-						|| 	subject.contains("mulesoft") || subject.contains("mule soft")
-						|| 	subject.contains("automation") || subject.contains("big data")
-						|| 	subject.contains("business analyst") || subject.contains("etl developer")
-						|| 	subject.contains("new voicemail") || subject.contains("qa tech")
-						|| 	subject.contains("qa lead") || subject.contains("aws developer")
-						|| 	subject.contains("hadoop") || subject.contains("node.js")
-						|| 	subject.contains("ui engineer") || subject.contains("android")
-						|| 	subject.contains("data analyst") || subject.contains("etl")
-						|| 	subject.contains("data engineer") || subject.contains("embedded")
-						|| 	subject.contains("systems analyst") || subject.contains("system analyst")
-						|| 	subject.contains("quality analyst") || subject.contains("dotnet")
-						|| 	subject.contains("osb developer") || subject.contains("test analyst")
-						|| 	subject.contains("ux designer") || subject.contains("ui architect")
-						|| 	subject.contains("tester") || subject.contains("splunk")
-						|| 	subject.contains("new text message") || subject.contains("ui lead")
-						|| 	subject.contains("informatica") || subject.contains("front end")
-						|| 	subject.contains("ebs order management") || subject.contains("front end")
-						|| 	subject.contains("weblogic") || subject.contains("machine learning")
-						|| 	subject.contains("oracle financials") || subject.contains("peoplesoft")
-						) {
-					System.out.println("Deleting 2 this email from: " 
-						+ from + " ccList: " + ccList + "subject: " + msg.getSubject());
-					
-					softDelete(inbox, trash, msg);
-	
-					continue;
-				}
 				
+				//move this to a properties file
+				String[] delteKeywords= {
+						"angular",".net","mulesoft","mule soft","automation","big data","business analyst","etl developer","new voicemail","qa tech",
+						"qa lead","hadoop","node.js","ui engineer","android","data analyst","etl","data engineer","embedded",
+						"systems analyst","system analyst","quality analyst","dotnet","osb developer","test analyst","ux designer","ui architect",
+						"tester","splunk","new text message","ui lead","informatica","front end","azure",
+						"ebs order management","ios developer","weblogic","machine learning","sap ","pl/sql developer", "quality assurance",
+						"oracle financials","peoplesoft", "aws dev", "product manager","operation manager","splunk"
+				
+				};
+				
+				boolean keyWordFound=false;
+				String keyWord="";
+				for (String d : delteKeywords) {
+					if(subject.contains(d)){
+						keyWordFound=true;
+						keyWord=d;
+						break;
+					}
+			}
+				
+				
+				if(keyWordFound) {
+					System.out.println("Deleting 2 this email keyword: "+keyWord+"from: " 
+							+ from + " ccList: " + ccList + "subject: " + msg.getSubject());						
+						softDelete(inbox, trash, msg);		
+						continue;
+				}
 
 
 
@@ -126,7 +125,7 @@ class Methods{
 				if((subject.contains("full time") || subject.contains("permanent")
 					||	subject.contains("fulltime") || subject.contains("fte") )
 						
-						&& !(subject.contains("contract") || subject.contains("c2c"))) {
+						&& !(subject.contains("contract") || subject.contains("c2c") || subject.contains("cwr")  )) {
 					System.out.println("Deleting 3 this email from: " 
 							+ from + " ccList: " + ccList + "subject: " + msg.getSubject());
 					softDelete(inbox, trash, msg);
@@ -162,9 +161,7 @@ class Methods{
 						//System.out.println("Content = " + content);
 
 						String responseMessage="Is C2C option available for this position?<br />"
-								+ "Is the hourly rate more that $90/hr, C2C? (for California, NY etc. $110/hr)<br />"
-								//+ "What are the best hourly rates, C2C?<br />"
-								+ "My experience= 15+ years<br />"
+								+ "What are the best hourly rates, C2C?<br />"
 								+"Dennis";
 
 						responseMessage = modifyContent(content, responseMessage, from, date);
