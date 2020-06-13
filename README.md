@@ -1,5 +1,5 @@
 # EmailResponder
-A app that connects to a gmail account and automatically responds to dealing with recruiter emails.
+A java app that connects to a gmail account and automatically responds to dealing with recruiter emails.
 
 What the app does:
 Based on keywords on incoming email it will do one or more of the following.
