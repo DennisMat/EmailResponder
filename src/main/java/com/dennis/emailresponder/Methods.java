@@ -161,6 +161,7 @@ class Methods{
 						//System.out.println("Content = " + content);
 
 						String responseMessage="Is C2C option available for this position?<br />"
+								+"Is it avaialble for H1B holders(I'm Canadian citizen and have a US H1B)<br />"
 								+ "What are the best hourly rates, C2C?<br />"
 								+"Dennis";
 
