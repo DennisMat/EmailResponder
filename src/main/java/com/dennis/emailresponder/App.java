@@ -11,7 +11,11 @@ public class App
 	static String password="gdientag";
 	static String host="imap.gmail.com";
 	
-	
+	/*
+	 
+	 Too low, looking for at least $110/hr for California.Or $100/hr if remote.
+	 
+	 */
 	
     public static void main( String[] args )
     {
