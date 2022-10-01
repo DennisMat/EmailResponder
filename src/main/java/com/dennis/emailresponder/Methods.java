@@ -11,7 +11,6 @@ import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
 import javax.mail.search.FlagTerm;
 
-import com.sun.mail.imap.protocol.FLAGS;    
 class Methods{  
 
 
@@ -89,18 +88,26 @@ class Methods{
 				//move this to a properties file
 				String[] delteKeywords= {
 						"angular",".net","mulesoft","mule soft","automation","big data","business analyst","etl developer","new voicemail","qa tech",
-						"qa lead","hadoop","node.js","ui engineer","android","data analyst","etl","data engineer","embedded",
+						"qa lead","hadoop","node.js","nodejs","ui engineer","android","data analyst","etl","data engineer","embedded",
 						"systems analyst","system analyst","quality analyst","dotnet","osb developer","test analyst","ux designer","ui architect",
-						"tester","splunk","new text message","ui lead","informatica","front end","azure",
+						"tester","splunk","new text message","ui lead","ui developer","informatica","front end","azure",
 						"ebs order management","ios developer","weblogic","machine learning","sap ","pl/sql developer", "quality assurance",
-						"oracle financials","peoplesoft", "aws dev", "product manager","operation manager","splunk"
+						"oracle financials","oracle app","peoplesoft", "aws dev", "product manager","operation manager","splunk","tableau", "c++",
+						"data architect","support","ruby", "dynamics","hl7","qa analyst","sdet","mainframe","tableau"
+						,".net developer","oracle soa","c programmer","android lead","wireless","python","salesforce", "react",
+						"qa analyst","qa engineer","full stack engineer","cloud architect","devops","zuora","guidewire",
+						"test lead","apache camel","oracle dba","bigdata","osb","manufacturing","network",
+						"cyberark","flexera","security engineer","4gl","sterling","incorta","ace developer",
+						"oracle atg","mobile test", "apache spark","tibco","modeler","ormb","wi-fi","scrum master",
+						"map reduce","ml engineer","websphere","Oracle epm","pega"
+						
 				
 				};
 				
 				boolean keyWordFound=false;
 				String keyWord="";
 				for (String d : delteKeywords) {
-					if(subject.contains(d)){
+					if(subject.contains(d)){System.out.println("d=" +d);
 						keyWordFound=true;
 						keyWord=d;
 						break;
@@ -121,7 +128,7 @@ class Methods{
 					System.out.println("Skipping 2 this email subject=" + msg.getSubject());
 					continue;
 				}
-
+/*
 				if((subject.contains("full time") || subject.contains("permanent")
 					||	subject.contains("fulltime") || subject.contains("fte") )
 						
@@ -137,6 +144,8 @@ class Methods{
 					softDelete(inbox, trash, msg);
 					continue;
 				}
+				
+				*/
 
 			
 
@@ -145,23 +154,29 @@ class Methods{
 				String contentLowerCase=content.toLowerCase();
 				
 				
-				if(contentLowerCase.contains("fte only") || contentLowerCase.contains("no c2c")) {
-					System.out.println("Skipping 5 this email subject=" + msg.getSubject());
-					continue;
-				}
+//				if(contentLowerCase.contains("fte only") || contentLowerCase.contains("no c2c")) {
+//					System.out.println("Skipping 5 this email subject=" + msg.getSubject());
+//					continue;
+//				}
 				
 
-				if(contentLowerCase.contains("contract") || contentLowerCase.contains("duration")
-					|| contentLowerCase.contains("long term") || contentLowerCase.contains("months")
-						) {
+//				if(contentLowerCase.contains("contract") || contentLowerCase.contains("duration")
+//					|| contentLowerCase.contains("long  term") || contentLowerCase.contains("months")
+//						) {
 
 					if(contentLowerCase.contains("java")) {
 
 						System.out.println("will respond to Subject = " + msg.getSubject());
 						//System.out.println("Content = " + content);
 
-						String responseMessage="Is C2C option available for this position?<br />"
-								+ "What are the best hourly rates, C2C?<br />"
+						String responseMessage1="Is the C2C rate above $100? (lesser for remote) <br /> "
+								+"What is the salary/rate on W2? <br />"
+								+"Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
+								+"Dennis";
+						
+						String responseMessage="What is the C2C rate?<br /> "
+								+"What is the salary/rate on W2? <br />"
+								+"Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
 								+"Dennis";
 
 						responseMessage = modifyContent(content, responseMessage, from, date);
@@ -171,13 +186,9 @@ class Methods{
 						if(isSuccess) {
 							System.out.println("Deleting this email after responding. subject = " + msg.getSubject());					
 							softDelete(inbox, trash, msg);
-						}
-							
-							
-							
-							
+						}	
 
-					}
+					
 
 					//inbox.close(false);
 				}else{
