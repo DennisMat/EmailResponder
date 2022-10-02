@@ -261,6 +261,20 @@ class Methods{
 				"javax.net.ssl.SSLSocketFactory");    
 		props.put("mail.smtp.auth", "true");    
 		props.put("mail.smtp.port", "465");
+		
+		/* This also works keep just in case. Notice the different post.
+		   props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.socketFactory.port", "587");
+        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.starttls.enable", "true"); 
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+        props.put("mail.smtp.socketFactory.fallback", "true");
+        props.put("mail.smtp.ssl.socketFactory", "true");
+        props.put("mail.smtp.EnableSSL.enable","true");
+        props.put("mail.smtp.ssl.protocols","TLSv1.2");
+		 */
 		return props;
 	}  
 
