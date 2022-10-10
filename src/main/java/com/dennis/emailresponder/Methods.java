@@ -14,6 +14,7 @@ import javax.mail.search.FlagTerm;
 class Methods {
 
 
+
 	static void processUnreadEmails(String email, String password, String host) {
 
 		int minutes = 10;
@@ -81,27 +82,24 @@ class Methods {
 				String content = getContent(msg);
 
 				String contentLowerCase = content.toLowerCase();
-
-//				if(contentLowerCase.contains("fte only") || contentLowerCase.contains("no c2c")) {
-//					System.out.println("Skipping 5 this email subject=" + msg.getSubject());
-//					continue;
-//				}
-
-//				if(contentLowerCase.contains("contract") || contentLowerCase.contains("duration")
-//					|| contentLowerCase.contains("long  term") || contentLowerCase.contains("months")
-//						) {
-
+				
 				if (contentLowerCase.contains("java")) {
 
 					System.out.println("will respond to Subject = " + msg.getSubject());
 					// System.out.println("Content = " + content);
 
 					String responseMessage1 = "Is the C2C rate above $110? (lesser for remote) <br /> "
-							+ "What is the salary/rate on W2? <br />"
+							+ "What is the salary/rate? <br />"
 							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
 							+ "Dennis";
 
-					String responseMessage = "What is the C2C rate?<br /> " + "What is the salary/rate on W2? <br />"
+					String responseMessage2 = "What is the C2C rate if it's a contract?<br /> "
+							+ "What is the salary/rate if it's a FTE? <br />"
+							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
+							+ "Dennis";
+
+					String responseMessage = "What is the C2C rate if it's a contract?<br /> "
+							+ "is it above $110/hr and remote? <br />"
 							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
 							+ "Dennis";
 
@@ -147,6 +145,17 @@ class Methods {
 				skippable = true;
 			}
 
+			String content = getContent(msg);
+
+			String contentLowerCase = content.toLowerCase();
+
+			// these are invites.
+			if (contentLowerCase.contains("webex") || contentLowerCase.contains("meet.google.com")
+					|| contentLowerCase.contains("teams.microsoft")|| contentLowerCase.contains("zoom")) {
+				System.out.println("Skipping this email because it's an invite subject=" + msg.getSubject());
+				skippable = true;
+			}
+
 		} catch (Exception e) {
 			System.out.println(e);
 		}
@@ -161,7 +170,8 @@ class Methods {
 		try {
 
 			// move this to a properties file
-			String[] delteKeywords = { "angular", ".net", "mulesoft", "mule soft", "automation", "big data",
+			String[] deleteKeywords = {"citizen only", "performance engineer", "performance test engineer", "c developer", "endeca",
+					"BlueYonder", "angular", ".net", "mulesoft", "mule soft", "automation", "big data",
 					"business analyst", "etl developer", "new voicemail", "qa tech", "qa lead", "hadoop", "node.js",
 					"nodejs", "ui engineer", "android", "data analyst", "etl", "data engineer", "embedded",
 					"systems analyst", "system analyst", "quality analyst", "dotnet", "osb developer", "test analyst",
@@ -181,9 +191,9 @@ class Methods {
 
 			boolean keyWordFound = false;
 			String keyWord = "";
-			for (String d : delteKeywords) {
+			for (String d : deleteKeywords) {
 				if (subject.contains(d)) {
-					System.out.println("d=" + d);
+					System.out.println("delete keyword =" + d);
 					keyWordFound = true;
 					keyWord = d;
 					break;
@@ -192,6 +202,28 @@ class Methods {
 
 			if (keyWordFound) {
 				System.out.println("Deleting  this email keyword: " + keyWord + "from: " + from + " ccList: " + ccList
+						+ "subject: " + msg.getSubject());
+
+				isDeletetable = true;
+			}
+
+			String[] deleteEmailsFrom = { "jobalerts-noreply@linkedin.com", "invitations@linkedin.com" };
+			boolean emailFound = false;
+			if (!keyWordFound) {
+
+				String email = "";
+				for (String e : deleteEmailsFrom) {
+					if (from.contains(e)) {
+						System.out.println("from email =" + e);
+						emailFound = true;
+						email = e;
+						break;
+					}
+				}
+			}
+
+			if (emailFound) {
+				System.out.println("Deleting  this email because it is from: " + from + " ccList: " + ccList
 						+ "subject: " + msg.getSubject());
 
 				isDeletetable = true;
