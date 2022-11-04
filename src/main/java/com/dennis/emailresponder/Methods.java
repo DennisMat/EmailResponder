@@ -14,7 +14,6 @@ import javax.mail.search.FlagTerm;
 class Methods {
 
 
-
 	static void processUnreadEmails(String email, String password, String host) {
 
 		int minutes = 10;
@@ -99,7 +98,7 @@ class Methods {
 							+ "Dennis";
 
 					String responseMessage = "What is the C2C rate if it's a contract?<br /> "
-							+ "is it above $110/hr and remote? <br />"
+							+ "is it above $100/hr and remote? <br />"
 							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
 							+ "Dennis";
 
@@ -128,13 +127,21 @@ class Methods {
 	}
 
 	private static boolean isSkippable(Message msg, String subject, String from, String toList, String ccList) {
-
 		boolean skippable = false;
+		
+		String stellarit="@stellarit.com";
+		String synechron="@synechron.com";
 		try {
-			if (from.endsWith("@stellarit.com") || toList.contains("@stellarit.com")
-					|| ccList.contains("@stellarit.com")) {
+			if (from.endsWith(stellarit) || toList.contains(stellarit)
+					|| ccList.contains(stellarit)) {
 				skippable = true;
-				System.out.println("Skipping this email because it's form stellarit.com. Subject=" + msg.getSubject());
+				System.out.println("Skipping this email because it's from "+stellarit+". Subject=" + msg.getSubject());
+
+			}else 
+			if (from.endsWith("@synechron.com") || toList.contains("@synechron.com")
+					|| ccList.contains("@synechron.com")) {
+				skippable = true;
+				System.out.println("Skipping this email because it's from "+synechron+". Subject=" + msg.getSubject());
 
 			} else if (subject.startsWith("re:")) {
 				System.out.println("Skipping this email because it's a reply. Subject=" + msg.getSubject());
@@ -143,8 +150,12 @@ class Methods {
 			} else if (subject.startsWith("rtr")) {
 				System.out.println("Skipping this email because this is an RTR. Subject=" + msg.getSubject());
 				skippable = true;
+			}else if(from.contains("calendar-notification@google.com")) {
+				skippable = true;
+			}else if(from.toLowerCase().contains("kethireddy")) {
+				skippable = true;
 			}
-
+			
 			String content = getContent(msg);
 
 			String contentLowerCase = content.toLowerCase();
@@ -170,7 +181,14 @@ class Methods {
 		try {
 
 			// move this to a properties file
-			String[] deleteKeywords = {"citizen only", "performance engineer", "performance test engineer", "c developer", "endeca",
+			String[] deleteKeywordsSubject = {
+					
+					"validation engineer","platform engineer","jira admin",
+					"content management","oracle ebs","mdm architect",".net technical","datastage",
+					"pen testing","penetration","triage","lims developer","sql developer","sql software developer","jira admin","qlty assurance",
+					"power platform","golang","systems administrator","sap abap","devops","salesforce","desktop support",
+					"data architect","snowflake","oracle service bus","service desk","sql server database developer",
+					"citizen only", "performance engineer", "performance test engineer", "c developer", "endeca",
 					"BlueYonder", "angular", ".net", "mulesoft", "mule soft", "automation", "big data",
 					"business analyst", "etl developer", "new voicemail", "qa tech", "qa lead", "hadoop", "node.js",
 					"nodejs", "ui engineer", "android", "data analyst", "etl", "data engineer", "embedded",
@@ -188,11 +206,26 @@ class Methods {
 					"wi-fi", "scrum master", "map reduce", "ml engineer", "websphere", "Oracle epm", "pega"
 
 			};
+			
+			String[] deleteKeywordsInMessage = {"no c2c","us citizen only"
+					
+			};
 
 			boolean keyWordFound = false;
 			String keyWord = "";
-			for (String d : deleteKeywords) {
-				if (subject.contains(d)) {
+			for (String d : deleteKeywordsSubject) {
+				if (!d.isBlank() && subject.contains(d)) {
+					System.out.println("delete keyword =" + d);
+					keyWordFound = true;
+					keyWord = d;
+					break;
+				}
+			}
+			String content = getContent(msg);
+
+			String contentLowerCase = content.toLowerCase();
+			for (String d : deleteKeywordsInMessage) {
+				if (!d.isBlank() && contentLowerCase.contains(d)) {
 					System.out.println("delete keyword =" + d);
 					keyWordFound = true;
 					keyWord = d;
@@ -201,7 +234,7 @@ class Methods {
 			}
 
 			if (keyWordFound) {
-				System.out.println("Deleting  this email keyword: " + keyWord + "from: " + from + " ccList: " + ccList
+				System.out.println("Deleting  this email keyword: " + keyWord + " from: " + from + " ccList: " + ccList
 						+ "subject: " + msg.getSubject());
 
 				isDeletetable = true;
