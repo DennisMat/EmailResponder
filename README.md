@@ -9,13 +9,19 @@ Based on keywords on incoming email it will do one or more of the following.
 - Leave the email untouched for me to manually deal with it 
 
 
-To make sure your app works, change the following settings:
+To make sure your app works, follow instructions mentioned here:
 
-- Go to https://myaccount.google.com/security?pli=1#connectedapps
+- https://support.google.com/accounts/answer/1187538?hl=en&co=GENIE.Platform%3DDesktop
 
-- go to the section 'Less secure app access'
+Instruction copied from above link:
 
-- Change 'Allow less secure apps:' to ON
+- Go to your Google Account at https://myaccount.google.com/
+- On the left, click Security.
+- Under "Signing in to Google," click 2-Step Verification. You may need to sign in.
+- Under "Backup codes," click Continue .
+- From here you can:
 
-TODO:
-- move keywords to a properties file rather than hard coding them.
+    Get backup codes: To add backup codes, click Get backup codes.
+    Create a new set of backup codes and inactivate old ones: To create new codes, click Refresh .
+	
+use a single backup code as the password in your app.

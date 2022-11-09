@@ -58,7 +58,17 @@ class Methods {
 				String toList = parseAddresses(msg.getRecipients(RecipientType.TO));
 				String ccList = parseAddresses(msg.getRecipients(RecipientType.CC));
 
-				Date date = msg.getReceivedDate();
+				Date msgDate = msg.getReceivedDate();
+				
+				Date currentTime = new Date();
+				
+				int minutesSkip= 10;//skip emails that came in  the last 10 minutes;
+
+				
+				if(currentTime.getTime() - msgDate.getTime() < minutesSkip*60*1000){
+					System.out.println("Skipping this email because its recent. subject=" + msg.getSubject());
+					continue;
+				}
 
 				boolean skippable = isSkippable(msg, subject, from, toList, ccList);
 
@@ -102,7 +112,7 @@ class Methods {
 							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
 							+ "Dennis";
 
-					responseMessage = modifyContent(content, responseMessage, from, date);
+					responseMessage = modifyContent(content, responseMessage, from, msgDate);
 
 					boolean isSuccess = send(email, password, from, "Re: " + msg.getSubject(), responseMessage,
 							session);
@@ -240,7 +250,7 @@ class Methods {
 				isDeletetable = true;
 			}
 
-			String[] deleteEmailsFrom = { "jobalerts-noreply@linkedin.com", "invitations@linkedin.com" };
+			String[] deleteEmailsFrom = { "notifications-noreply@linkedin.com","jobalerts-noreply@linkedin.com", "invitations@linkedin.com" };
 			boolean emailFound = false;
 			if (!keyWordFound) {
 
