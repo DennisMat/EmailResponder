@@ -14,6 +14,7 @@ import javax.mail.search.FlagTerm;
 class Methods {
 
 
+
 	static void processUnreadEmails(String email, String password, String host) {
 
 		int minutes = 10;
@@ -59,13 +60,10 @@ class Methods {
 				String ccList = parseAddresses(msg.getRecipients(RecipientType.CC));
 
 				Date msgDate = msg.getReceivedDate();
-				
-				Date currentTime = new Date();
-				
-				int minutesSkip= 10;//skip emails that came in  the last 10 minutes;
 
-				
-				if(currentTime.getTime() - msgDate.getTime() < minutesSkip*60*1000){
+				Date currentTime = new Date();
+
+				if (currentTime.getTime() - msgDate.getTime() < minutesSkip * 60 * 1000) {
 					System.out.println("Skipping this email because its recent. subject=" + msg.getSubject());
 					continue;
 				}
@@ -76,7 +74,7 @@ class Methods {
 					continue;
 				}
 
-				boolean isDelete = isDeletetable(msg, subject, from, toList, ccList);
+				boolean isDelete = isDeleteable(msg, subject, from, toList, ccList);
 
 				if (isDelete) {
 					softDelete(inbox, trash, msg);
@@ -91,16 +89,14 @@ class Methods {
 				String content = getContent(msg);
 
 				String contentLowerCase = content.toLowerCase();
-				
+
 				if (contentLowerCase.contains("java")) {
 
 					System.out.println("will respond to Subject = " + msg.getSubject());
 					// System.out.println("Content = " + content);
 
-					String responseMessage1 = "Is the C2C rate above $110? (lesser for remote) <br /> "
-							+ "What is the salary/rate? <br />"
-							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
-							+ "Dennis";
+					String responseMessage1 = "Is the C2C rate above $110?( lesser for remote)<br /> "
+							+ "What is the base salary if it's FTE? <br />" + "Dennis";
 
 					String responseMessage2 = "What is the C2C rate if it's a contract?<br /> "
 							+ "What is the salary/rate if it's a FTE? <br />"
@@ -112,7 +108,7 @@ class Methods {
 							+ "Is it available for H1B holders? (I'm Canadian citizen and have a US H1B)<br />"
 							+ "Dennis";
 
-					responseMessage = modifyContent(content, responseMessage, from, msgDate);
+					responseMessage = modifyContent(content, responseMessage1, from, msgDate);
 
 					boolean isSuccess = send(email, password, from, "Re: " + msg.getSubject(), responseMessage,
 							session);
@@ -138,43 +134,54 @@ class Methods {
 
 	private static boolean isSkippable(Message msg, String subject, String from, String toList, String ccList) {
 		boolean skippable = false;
-		
-		String stellarit="@stellarit.com";
-		String synechron="@synechron.com";
+
+		String[] fromIgnoreList = { "@stellarit.com", "@stansource.com","@synechron.com", "@indeed.com",
+				"calendar-notification@google.com", "kethireddy","triplebyte" };
+		String[] subjectIgnoreList = { "re:", "rtr","triplebyte" };
+		String[] contentIgnoreList = { "webex", "teams.microsoft", "meet.google.com", "zoom","triplebyte" };
+
 		try {
-			if (from.endsWith(stellarit) || toList.contains(stellarit)
-					|| ccList.contains(stellarit)) {
-				skippable = true;
-				System.out.println("Skipping this email because it's from "+stellarit+". Subject=" + msg.getSubject());
+			skippable = false;
+			for (String fi : fromIgnoreList) {
+				if (from.endsWith(fi) || toList.contains(fi) || ccList.contains(fi)
+						|| from.toLowerCase().contains(fi)) {
+					System.out.println("Skipping this email because it's from " + fi + ". Subject=" + msg.getSubject());
+					skippable = true;
+					break;
 
-			}else 
-			if (from.endsWith("@synechron.com") || toList.contains("@synechron.com")
-					|| ccList.contains("@synechron.com")) {
-				skippable = true;
-				System.out.println("Skipping this email because it's from "+synechron+". Subject=" + msg.getSubject());
-
-			} else if (subject.startsWith("re:")) {
-				System.out.println("Skipping this email because it's a reply. Subject=" + msg.getSubject());
-				skippable = true;
-
-			} else if (subject.startsWith("rtr")) {
-				System.out.println("Skipping this email because this is an RTR. Subject=" + msg.getSubject());
-				skippable = true;
-			}else if(from.contains("calendar-notification@google.com")) {
-				skippable = true;
-			}else if(from.toLowerCase().contains("kethireddy")) {
-				skippable = true;
+				}
 			}
-			
-			String content = getContent(msg);
 
-			String contentLowerCase = content.toLowerCase();
+			if (!skippable) {
+				for (String si : subjectIgnoreList) {
 
-			// these are invites.
-			if (contentLowerCase.contains("webex") || contentLowerCase.contains("meet.google.com")
-					|| contentLowerCase.contains("teams.microsoft")|| contentLowerCase.contains("zoom")) {
-				System.out.println("Skipping this email because it's an invite subject=" + msg.getSubject());
-				skippable = true;
+					if (subject.toLowerCase().contains(si)) {
+						System.out.println("Skipping this email because it has " + si + " in subject. Subject="
+								+ msg.getSubject());
+						skippable = true;
+						break;
+					}
+
+				}
+
+			}
+
+			if (!skippable) {
+
+				String content = getContent(msg);
+
+				String contentLowerCase = content.toLowerCase();
+				for (String ci : contentIgnoreList) {
+
+					if (contentLowerCase.contains(ci)) {
+						System.out.println("Skipping this email because it has " + ci + " in content. Subject="
+								+ msg.getSubject());
+						skippable = true;
+						break;
+					}
+
+				}
+
 			}
 
 		} catch (Exception e) {
@@ -184,41 +191,44 @@ class Methods {
 		return skippable;
 	}
 
-	private static boolean isDeletetable(Message msg, String subject, String from, String toList, String ccList) {
+	private static boolean isDeleteable(Message msg, String subject, String from, String toList, String ccList) {
 
 		boolean isDeletetable = false;
 
 		try {
 
 			// move this to a properties file
-			String[] deleteKeywordsSubject = {
-					
-					"validation engineer","platform engineer","jira admin",
-					"content management","oracle ebs","mdm architect",".net technical","datastage",
-					"pen testing","penetration","triage","lims developer","sql developer","sql software developer","jira admin","qlty assurance",
-					"power platform","golang","systems administrator","sap abap","devops","salesforce","desktop support",
-					"data architect","snowflake","oracle service bus","service desk","sql server database developer",
-					"citizen only", "performance engineer", "performance test engineer", "c developer", "endeca",
-					"BlueYonder", "angular", ".net", "mulesoft", "mule soft", "automation", "big data",
-					"business analyst", "etl developer", "new voicemail", "qa tech", "qa lead", "hadoop", "node.js",
-					"nodejs", "ui engineer", "android", "data analyst", "etl", "data engineer", "embedded",
-					"systems analyst", "system analyst", "quality analyst", "dotnet", "osb developer", "test analyst",
-					"ux designer", "ui architect", "tester", "splunk", "new text message", "ui lead", "ui developer",
-					"informatica", "front end", "azure", "ebs order management", "ios developer", "weblogic",
-					"machine learning", "sap ", "pl/sql developer", "quality assurance", "oracle financials",
-					"oracle app", "peoplesoft", "aws dev", "product manager", "operation manager", "splunk", "tableau",
-					"c++", "data architect", "support", "ruby", "dynamics", "hl7", "qa analyst", "sdet", "mainframe",
-					"tableau", ".net developer", "oracle soa", "c programmer", "android lead", "wireless", "python",
-					"salesforce", "react", "qa analyst", "qa engineer", "full stack engineer", "cloud architect",
-					"devops", "zuora", "guidewire", "test lead", "apache camel", "oracle dba", "bigdata", "osb",
-					"manufacturing", "network", "cyberark", "flexera", "security engineer", "4gl", "sterling",
-					"incorta", "ace developer", "oracle atg", "mobile test", "apache spark", "tibco", "modeler", "ormb",
-					"wi-fi", "scrum master", "map reduce", "ml engineer", "websphere", "Oracle epm", "pega"
+			String[] deleteKeywordsSubject = { "sap mm", "cpe test", "ui developer", ".net developer", "dot net lead",
+					"voip", "php developer", "java fsd", "full-stack", "data integration", "information security",
+					"camunda lead", "mobile architect", "firmware engineer", "dot net architect", "mulesoft",
+					"sailpoint", "okta consultant", "business intelligence", "active directory", "validation engineer",
+					"platform engineer", "jira admin", "content management", "oracle ebs", "mdm architect",
+					".net technical", "datastage", "pen testing", "penetration", "triage", "lims developer",
+					"sql developer", "sql software developer", "jira admin", "qlty assurance", "power platform",
+					"golang", "systems administrator", "sap abap", "devops", "salesforce", "desktop support",
+					"data architect", "snowflake", "oracle service bus", "service desk",
+					"sql server database developer", "citizen only", "performance engineer",
+					"performance test engineer", "c developer", "endeca", "blueyonder", "angular", ".net", "mulesoft",
+					"mule soft", "automation", "big data", "business analyst", "etl developer", "new voicemail",
+					"qa tech", "qa lead", "hadoop", "node.js", "nodejs", "ui engineer", "android", "data analyst",
+					"etl", "data engineer", "embedded", "systems analyst", "system analyst", "quality analyst",
+					"dotnet", "osb developer", "test analyst", "ux designer", "ui architect", "tester", "splunk",
+					"new text message", "ui lead", "ui developer", "informatica", "front end", "azure",
+					"ebs order management", "ios developer", "weblogic", "machine learning", "sap ", "pl/sql developer",
+					"quality assurance", "oracle financials", "oracle app", "peoplesoft", "aws dev", "product manager",
+					"operation manager", "splunk", "tableau", "c++", "data architect", "support", "ruby", "dynamics",
+					"hl7", "qa analyst", "sdet", "mainframe", "tableau", ".net developer", "oracle soa", "c programmer",
+					"android lead", "wireless", "python", "salesforce", "react", "qa analyst", "qa engineer",
+					"full stack engineer", "cloud architect", "devops", "zuora", "guidewire", "test lead",
+					"apache camel", "oracle dba", "bigdata", "osb", "manufacturing", "network", "cyberark", "flexera",
+					"security engineer", "4gl", "sterling", "incorta", "ace developer", "oracle atg", "mobile test",
+					"apache spark", "tibco", "modeler", "ormb", "wi-fi", "scrum master", "map reduce", "ml engineer",
+					"websphere", "oracle epm", "pega"
 
 			};
-			
-			String[] deleteKeywordsInMessage = {"no c2c","us citizen only"
-					
+
+			String[] deleteKeywordsInMessage = { "no c2c", "us citizen only", "only us citizen","no remote"
+
 			};
 
 			boolean keyWordFound = false;
@@ -250,7 +260,9 @@ class Methods {
 				isDeletetable = true;
 			}
 
-			String[] deleteEmailsFrom = { "notifications-noreply@linkedin.com","jobalerts-noreply@linkedin.com", "invitations@linkedin.com" };
+			String[] deleteEmailsFrom = { "donotreply@indeed.com", "notifications-noreply@linkedin.com",
+					"jobalerts-noreply@linkedin.com", "invitations@linkedin.com", "messages-noreply@linkedin.com",
+					"inmail-hit-reply@linkedin.com" };
 			boolean emailFound = false;
 			if (!keyWordFound) {
 
