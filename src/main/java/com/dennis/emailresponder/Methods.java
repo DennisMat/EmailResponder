@@ -1,11 +1,23 @@
 package com.dennis.emailresponder;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
@@ -14,6 +26,30 @@ import javax.mail.search.FlagTerm;
 class Methods {
 
 
+	static int minutesSkip = 2;// skip emails that came in the last 10 minutes;
+
+	static long daysInclude = 90;// 3 months
+	static String filePathEmailSent = "C:\\temp\\SentEmails.txt";
+
+	public static void main(String[] args)
+
+	{
+
+		fixTLSIssue();
+
+		Methods.processUnreadEmails(email, password, host);
+
+	}
+
+	/**
+	 * Newer version of java disables TLSv1 and TLSv1.1, we enable it again.
+	 *
+	 */
+	static void fixTLSIssue() {
+		String disabledAlgorithmsProp = "jdk.tls.disabledAlgorithms";
+		String newpropValue = java.security.Security.getProperty(disabledAlgorithmsProp).replace("TLSv1, TLSv1.1,", "");
+		java.security.Security.setProperty(disabledAlgorithmsProp, newpropValue);
+	}
 
 	static void processUnreadEmails(String email, String password, String host) {
 
@@ -39,6 +75,8 @@ class Methods {
 		try {
 			Store store = session.getStore("imaps");
 			store.connect(host, email, password);
+
+			Set<String> sentEmailAddresses = getSentEmailAddresses(store);
 
 			Folder inbox = store.getFolder("INBOX");
 			Folder trash = store.getFolder("[Gmail]/Trash");
@@ -68,7 +106,7 @@ class Methods {
 					continue;
 				}
 
-				boolean skippable = isSkippable(msg, subject, from, toList, ccList);
+				boolean skippable = isSkippable(msg, subject, from, toList, ccList, sentEmailAddresses);
 
 				if (skippable) {
 					continue;
@@ -132,13 +170,14 @@ class Methods {
 		System.out.println("\nAll emails processed\n");
 	}
 
-	private static boolean isSkippable(Message msg, String subject, String from, String toList, String ccList) {
+	private static boolean isSkippable(Message msg, String subject, String from, String toList, String ccList,
+			Set<String> sentEmailAddresses) {
 		boolean skippable = false;
 
-		String[] fromIgnoreList = { "@stellarit.com", "@stansource.com","@synechron.com", "@indeed.com",
-				"calendar-notification@google.com", "kethireddy","triplebyte" };
-		String[] subjectIgnoreList = { "re:", "rtr","triplebyte" };
-		String[] contentIgnoreList = { "webex", "teams.microsoft", "meet.google.com", "zoom","triplebyte" };
+		String[] fromIgnoreList = { "@stellarit.com", "@stansource.com", "@synechron.com", "@indeed.com",
+				"calendar-notification@google.com", "kethireddy", "triplebyte" };
+		String[] subjectIgnoreList = { "re:", "rtr", "triplebyte" };
+		String[] contentIgnoreList = { "webex", "teams.microsoft", "meet.google.com", "zoom", "triplebyte" };
 
 		try {
 			skippable = false;
@@ -149,6 +188,19 @@ class Methods {
 					skippable = true;
 					break;
 
+				}
+			}
+
+			if (!skippable) {
+				for (String sentEmailAddress : sentEmailAddresses) {
+					if (from.endsWith(sentEmailAddress) || toList.contains(sentEmailAddress)
+							|| ccList.contains(sentEmailAddress) || from.toLowerCase().contains(sentEmailAddress)) {
+						System.out.println("Skipping this email because I have responded in the past 3 months to "
+								+ sentEmailAddress + ". Subject=" + msg.getSubject());
+						skippable = true;
+						break;
+
+					}
 				}
 			}
 
@@ -227,7 +279,7 @@ class Methods {
 
 			};
 
-			String[] deleteKeywordsInMessage = { "no c2c", "us citizen only", "only us citizen","no remote"
+			String[] deleteKeywordsInMessage = { "no c2c", "us citizen only", "only us citizen", "no remote"
 
 			};
 
@@ -305,6 +357,145 @@ class Methods {
 		}
 
 		return isDeletetable;
+	}
+
+	static Set<String> readSentEmailFile(String filePathEmailSent) {
+		Set<String> sentEmailAddresses = new HashSet<String>();
+		try {
+			File f = new File(filePathEmailSent);
+			if (!f.exists()) {
+				System.out.println("file does not exist");
+				return sentEmailAddresses;
+			}
+			// Create a date format
+			SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+			// get the last modified date and format it to the defined format
+			System.out.println("File last modified date " + sdf.format(f.lastModified()));
+			Date currentTime = new Date();
+			
+			
+
+			if (currentTime.getTime() - f.lastModified() < 24 * 60 * 60 * 1000) {// older than a day
+				System.out.println("File is recent  " + sdf.format(f.lastModified()));
+				BufferedReader reader = new BufferedReader(new FileReader(filePathEmailSent));
+
+				String line = reader.readLine();
+				while (line != null) {
+					System.out.println(line);
+
+					sentEmailAddresses.add(line);
+					line = reader.readLine();
+
+				}
+
+				reader.close();
+			} else {
+
+				System.out.println("File is an old file " + sdf.format(f.lastModified()) + " hence not checking");
+
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return sentEmailAddresses;
+	}
+
+	static void writeSentEmailFile(String filePathEmailSent, Set<String> sentEmailAddresses) {
+
+		try {
+			System.out.println("writing sent email addresses to file....");
+			File fout = new File(filePathEmailSent);
+			if (fout.exists()) {
+				fout.delete();
+				System.out.println("Deleted File " + filePathEmailSent);
+			}
+
+			fout = new File(filePathEmailSent);
+			FileOutputStream fos = new FileOutputStream(fout);
+
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+
+			for (int i = 0; i < sentEmailAddresses.size(); i++) {
+
+				for (String sentEmailAddress : sentEmailAddresses) {
+					bw.write(sentEmailAddress.trim());
+					bw.newLine();
+
+				}
+
+			}
+
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	static Set<String> getSentEmailAddresses(Store store) {
+
+		Set<String> sentEmailAddresses = readSentEmailFile(filePathEmailSent);
+
+		try {
+
+			if (sentEmailAddresses.size() > 0) {
+				return sentEmailAddresses;
+			} else {
+
+				Folder sent = store.getFolder("[Gmail]/Sent Mail");
+
+				sent.open(Folder.READ_ONLY);
+
+				Message[] sentMessages = sent.getMessages();
+				System.out.println("sentMessages count=" + sentMessages.length);
+
+				for (int i = sentMessages.length - 1; i > 0; i--) {
+
+					Message msg = sentMessages[i];
+					Date msgDate = msg.getReceivedDate();
+
+					System.out.print(".");
+					Date currentTime = new Date();
+					if (currentTime.getTime() - msgDate.getTime() < daysInclude * 24 * 60 * 60 * 1000) {
+
+						String toList = parseAddresses(msg.getRecipients(RecipientType.TO));
+						String ccList = parseAddresses(msg.getRecipients(RecipientType.CC));
+
+						Matcher matcher = Pattern.compile("[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}")
+								.matcher(" " + toList + "  " + ccList);
+
+						while (matcher.find()) {
+							sentEmailAddresses.add(matcher.group());
+							System.out.println("Added " + matcher.group());
+						}
+
+						// System.out.println(msgDate.toLocaleString() + "toList=" + toList + " ccList="
+						// + ccList);
+
+						// System.out.println("Skipping this email because its recent. subject=" +
+						// msg.getSubject());
+						// continue;
+					} else {
+						System.out.println("Exiting loop ");
+						break;
+					}
+
+				}
+
+				writeSentEmailFile(filePathEmailSent, sentEmailAddresses);
+			}
+
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return sentEmailAddresses;
+
 	}
 
 	static void softDelete(Folder inbox, Folder trash, Message msg) throws MessagingException {
