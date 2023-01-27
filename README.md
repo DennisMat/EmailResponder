@@ -17,11 +17,5 @@ Instruction copied from above link:
 
 - Go to your Google Account at https://myaccount.google.com/
 - On the left, click Security.
-- Under "Signing in to Google," click 2-Step Verification. You may need to sign in.
-- Under "Backup codes," click Continue .
-- From here you can:
-
-    Get backup codes: To add backup codes, click Get backup codes.
-    Create a new set of backup codes and inactivate old ones: To create new codes, click Refresh .
-	
-use a single backup code as the password in your app.
+- Under "Signing in to Google," Click "2-Step Verification" section. Follow the process until this section is activated.
+- Under "Signing in to Google," Click on "App passwords" section. Follow the steps to generate a password. Use this password in the application code.
