@@ -7,15 +7,16 @@ package com.dennis.emailresponder;
 public class App {
 
 	static String email = "dennis.mathew2000@gmail.com";
-	static String password = "xxxxxxxxxxx";
+	static String password = "msnkzbwlfodhwqmp";
 	static String host = "imap.gmail.com";
+	static int minutesSkip = 2;// skip emails that came in the last 10 minutes;
 
-	public static void main(String[] args)
+	static long daysInclude = 90;// 3 months
+	static long fileAgeInDays = 5;
+	static String filePathEmailSent = "C:\\temp\\SentEmails.txt";
 
-	{
-
+	public static void main(String[] args){
 		fixTLSIssue();
-
 		Methods.processUnreadEmails(email, password, host);
 
 	}
@@ -29,4 +30,5 @@ public class App {
 		String newpropValue = java.security.Security.getProperty(disabledAlgorithmsProp).replace("TLSv1, TLSv1.1,", "");
 		java.security.Security.setProperty(disabledAlgorithmsProp, newpropValue);
 	}
+
 }
